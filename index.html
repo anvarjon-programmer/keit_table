@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag-and-Drop Table Builder</title>
+  <style>
+    * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  width: 100%;
+}
+
+.sidebar {
+  width: 20%;
+  background-color: #f0f0f0;
+  padding: 10px;
+  border-right: 2px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.draggable {
+  padding: 10px;
+  background-color: #3498db;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  cursor: grab;
+}
+
+.draggable:active {
+  cursor: grabbing;
+}
+
+.main-area {
+  width: 80%;
+  padding: 10px;
+}
+
+#table-container {
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  padding: 10px;
+  height: 400px;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th,
+table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+button {
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h3>Drag Items</h3>
+      <div class="draggable" draggable="true" data-type="column">
+        Add Column
+      </div>
+      <div class="draggable" draggable="true" data-type="row">
+        Add Row
+      </div>
+    </div>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <h3>Table Preview</h3>
+      <div id="table-container">
+        <table id="dynamic-table">
+          <thead>
+            <tr></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button id="generate-html">Generate HTML</button>
+      <button id="download-pdf">Download PDF</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  
+  <script>
+    const draggables = document.querySelectorAll(".draggable");
+const table = document.getElementById("dynamic-table");
+const generateHtmlBtn = document.getElementById("generate-html");
+
+draggables.forEach((draggable) => {
+  draggable.addEventListener("dragstart", (event) => {
+    event.dataTransfer.setData("text/plain", event.target.dataset.type);
+  });
+});
+
+const tableContainer = document.getElementById("table-container");
+
+tableContainer.addEventListener("dragover", (event) => {
+  event.preventDefault();
+});
+
+tableContainer.addEventListener("drop", (event) => {
+  event.preventDefault();
+  const type = event.dataTransfer.getData("text/plain");
+
+  if (type === "column") {
+    addColumn();
+  } else if (type === "row") {
+    addRow();
+  }
+});
+
+// Add Column Function
+function addColumn() {
+  const headerRow = table.querySelector("thead tr");
+  const bodyRows = table.querySelectorAll("tbody tr");
+
+  // Add a new header cell
+  const newHeaderCell = document.createElement("th");
+  newHeaderCell.textContent = `Column ${headerRow.children.length + 1}`;
+  headerRow.appendChild(newHeaderCell);
+
+  // Add a cell to each row in the tbody
+  bodyRows.forEach((row) => {
+    const newCell = document.createElement("td");
+    newCell.textContent = `Cell ${row.children.length + 1}`;
+    row.appendChild(newCell);
+  });
+}
+
+// Add Row Function
+function addRow() {
+  const body = table.querySelector("tbody");
+  const numCols = table.querySelector("thead tr").children.length;
+
+  // Create a new row
+  const newRow = document.createElement("tr");
+
+  for (let i = 0; i < numCols; i++) {
+    const newCell = document.createElement("td");
+    newCell.textContent = `Cell ${i + 1}`;
+    newRow.appendChild(newCell);
+  }
+
+  // If there are no columns, add one by default
+  if (numCols === 0) {
+    const firstCell = document.createElement("td");
+    firstCell.textContent = "Cell 1";
+    newRow.appendChild(firstCell);
+  }
+
+  body.appendChild(newRow);
+}
+
+// Generate HTML Function
+generateHtmlBtn.addEventListener("click", () => {
+  const tableHtml = table.outerHTML;
+  alert(tableHtml);
+});
+
+  </script>
+  <script>
+    const downloadPdfBtn = document.getElementById("download-pdf");
+
+downloadPdfBtn.addEventListener("click", () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  // Use autoTable plugin
+  pdf.autoTable({
+    html: '#dynamic-table', // Reference the table by ID
+    startY: 10, // Start after 10 units of vertical space
+    styles: {
+      halign: 'center', // Align text in the center
+    },
+  });
+
+  // Save the PDF
+  pdf.save('table.pdf');
+});
+  </script>
+</body>
+</html>
